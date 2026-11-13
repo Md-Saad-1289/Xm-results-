@@ -29,6 +29,8 @@ export interface Student {
   _id: string;
   projectId: string;
   name: string;
+  rollNo?: string;
+  studentCode?: string;
   totalAttendance: number;
   subjectCodes: SubjectCode[];
   createdAt: string;
@@ -67,6 +69,7 @@ export interface SubjectResult {
   subjectName: string;
   totalMarks: number;
   passMarks: number;
+  highestMarks?: number | null;
   obtainedMarks: number | null;
   percentage: number | null;
   grade: string | null;
@@ -78,6 +81,8 @@ export interface SubjectResult {
 export interface StudentResult {
   studentId: string;
   studentName: string;
+  rollNo?: string;
+  studentCode?: string;
   totalAttendance: number;
   totalObtainedMarks: number;
   totalFullMarks: number;

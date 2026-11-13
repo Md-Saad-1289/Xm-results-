@@ -38,7 +38,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const { name, subjectCodes, totalAttendance } = req.body;
+    const { name, subjectCodes, totalAttendance, rollNo, studentCode } = req.body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ error: 'শিক্ষার্থীর নাম অবশ্যই দিতে হবে।' });
@@ -80,7 +80,10 @@ router.post('/', async (req: Request, res: Response) => {
       }
     }
 
-    const newStudent = await db.createStudent(projectId, name, subjectCodes, attendanceNum);
+    const newStudent = await db.createStudent(projectId, name, subjectCodes, attendanceNum, {
+      rollNo: typeof rollNo === 'string' ? rollNo : '',
+      studentCode: typeof studentCode === 'string' ? studentCode : ''
+    });
     res.status(201).json(newStudent);
   } catch (error: any) {
     res.status(400).json({ error: error.message || 'শিক্ষার্থী তৈরি করতে ব্যর্থ হয়েছে।' });
@@ -91,7 +94,7 @@ router.post('/', async (req: Request, res: Response) => {
 router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { projectId, id } = req.params;
-    const { name, subjectCodes, totalAttendance } = req.body;
+    const { name, subjectCodes, totalAttendance, rollNo, studentCode } = req.body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ error: 'শিক্ষার্থীর নাম অবশ্যই দিতে হবে।' });
@@ -127,7 +130,10 @@ router.put('/:id', async (req: Request, res: Response) => {
       }
     }
 
-    const updated = await db.updateStudent(id, name, subjectCodes, attendanceNum);
+    const updated = await db.updateStudent(id, name, subjectCodes, attendanceNum, {
+      rollNo: typeof rollNo === 'string' ? rollNo : undefined,
+      studentCode: typeof studentCode === 'string' ? studentCode : undefined
+    });
     if (!updated) {
       return res.status(404).json({ error: 'শিক্ষার্থী পাওয়া যায়নি।' });
     }

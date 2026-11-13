@@ -89,13 +89,24 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({
   };
 
   // Student Actions
-  const handleAddStudent = async (name: string, subjectCodes: { subjectId: string; code: string }[], totalAttendance: number) => {
-    await api.createStudent(project._id, name, subjectCodes, totalAttendance);
+  const handleAddStudent = async (
+    name: string,
+    subjectCodes: { subjectId: string; code: string }[],
+    totalAttendance: number,
+    meta?: { rollNo?: string; studentCode?: string }
+  ) => {
+    await api.createStudent(project._id, name, subjectCodes, totalAttendance, meta);
     await loadProjectData();
   };
 
-  const handleUpdateStudent = async (id: string, name: string, subjectCodes: { subjectId: string; code: string }[], totalAttendance: number) => {
-    await api.updateStudent(project._id, id, name, subjectCodes, totalAttendance);
+  const handleUpdateStudent = async (
+    id: string,
+    name: string,
+    subjectCodes: { subjectId: string; code: string }[],
+    totalAttendance: number,
+    meta?: { rollNo?: string; studentCode?: string }
+  ) => {
+    await api.updateStudent(project._id, id, name, subjectCodes, totalAttendance, meta);
     await loadProjectData();
   };
 

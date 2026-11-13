@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Project, StudentResult, Subject } from '../../types';
-import { X, Printer, Download, ArrowUpDown } from 'lucide-react';
+import { X, Printer, Download, ArrowUpDown, Loader2 } from 'lucide-react';
+import { downloadHtmlAsPdf } from '../../utils/pdfExport';
 
 interface CompleteResultModalProps {
   isOpen: boolean;
@@ -99,7 +100,7 @@ interface SheetData {
   filterNote: string;
 }
 
-function buildSheetHtml(d: SheetData, opts: { showPrintButton: boolean }): string {
+function buildSheetHtml(d: SheetData, opts: { showPrintButton: boolean; forPdf?: boolean }): string {
   const fontSize = getPrintFontSize(d.subjects.length);
   const summaryCols = d.pendingCount > 0 ? 6 : 5;
   const colCount = d.subjects.length + 8;
@@ -174,16 +175,16 @@ function buildSheetHtml(d: SheetData, opts: { showPrintButton: boolean }): strin
       font-family: 'Hind Siliguri', 'Noto Sans Bengali', 'Kalpurush', 'Nirmala UI', 'Vrinda', 'Segoe UI', Arial, sans-serif;
       line-height: 1.35;
     }
-    body { padding: 16px; }
+    body { padding: ${opts.forPdf ? '0' : '16px'}; background: ${opts.forPdf ? '#ffffff' : '#f1f5f9'}; }
     .result-sheet {
       width: 100%;
-      max-width: 1180px;
+      max-width: ${opts.forPdf ? 'none' : '1180px'};
       margin: 0 auto;
       background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      padding: 24px 28px;
-      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+      border: ${opts.forPdf ? 'none' : '1px solid #e2e8f0'};
+      border-radius: ${opts.forPdf ? '0' : '6px'};
+      padding: ${opts.forPdf ? '6px 8px' : '24px 28px'};
+      box-shadow: ${opts.forPdf ? 'none' : '0 2px 6px rgba(15, 23, 42, 0.05)'};
     }
     .sheet-header { text-align: center; margin-bottom: 12px; }
     .sheet-header h1 {
@@ -402,6 +403,8 @@ export const CompleteResultModal: React.FC<CompleteResultModalProps> = ({
 }) => {
   const [filter, setFilter] = useState<FilterOption>('all');
   const [sortBy, setSortBy] = useState<SortOption>('merit');
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
 
   const instituteTitle = (project.instituteName || '').trim() || project.name;
   const examTitle = (project.examName || '').trim() || project.name;
@@ -492,7 +495,7 @@ export const CompleteResultModal: React.FC<CompleteResultModalProps> = ({
   }, [isOpen, onClose]);
 
   const getSheetHtml = useCallback(
-    (showPrintButton: boolean) =>
+    (showPrintButton: boolean, forPdf = false) =>
       buildSheetHtml(
         {
           instituteTitle,
@@ -511,7 +514,7 @@ export const CompleteResultModal: React.FC<CompleteResultModalProps> = ({
           filterNote:
             filter === 'all' ? '' : `ফিল্টার: ${FILTER_LABEL[filter]} (${processedResults.length} জন)`
         },
-        { showPrintButton }
+        { showPrintButton, forPdf }
       ),
     [
       instituteTitle,
@@ -577,16 +580,24 @@ export const CompleteResultModal: React.FC<CompleteResultModalProps> = ({
     document.body.appendChild(iframe);
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([getSheetHtml(true)], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${toSafeFileName(project.name)}_সম্পূর্ণ_ফলাফল.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const handleDownload = async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+    setDownloadError('');
+    try {
+      await downloadHtmlAsPdf({
+        html: getSheetHtml(false, true),
+        filename: `${toSafeFileName(project.name)}_সম্পূর্ণ_ফলাফল.pdf`,
+        targetSelector: '.result-sheet',
+        orientation: 'landscape',
+        renderWidthPx: 1120,
+        marginMm: 8
+      });
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'PDF ডাউনলোড করতে ব্যর্থ হয়েছে');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const renderStatus = (status: FinalStatus) => {
@@ -635,12 +646,17 @@ export const CompleteResultModal: React.FC<CompleteResultModalProps> = ({
             </button>
             <button
               onClick={handleDownload}
+              disabled={isDownloading}
               type="button"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] text-xs font-semibold text-white bg-[#1B365D] hover:bg-slate-800 active:bg-slate-950 rounded-lg transition-colors cursor-pointer shadow-xs"
-              title="অফলাইন ফাইল হিসেবে ডাউনলোড করুন"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] text-xs font-semibold text-white bg-[#1B365D] hover:bg-slate-800 active:bg-slate-950 disabled:opacity-60 disabled:cursor-not-allowed rounded-lg transition-colors cursor-pointer shadow-xs"
+              title="PDF ফাইল হিসেবে ডাউনলোড করুন"
             >
-              <Download className="w-4 h-4" />
-              <span>ডাউনলোড</span>
+              {isDownloading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              <span>{isDownloading ? 'PDF তৈরি হচ্ছে...' : 'ডাউনলোড PDF'}</span>
             </button>
             <button
               onClick={onClose}
@@ -653,6 +669,12 @@ export const CompleteResultModal: React.FC<CompleteResultModalProps> = ({
             </button>
           </div>
         </div>
+
+        {downloadError && (
+          <div className="px-4 sm:px-6 py-2 bg-rose-50 border-b border-rose-200 text-xs text-rose-700 font-medium shrink-0">
+            {downloadError}
+          </div>
+        )}
 
         {/* Content */}
         <div className="p-4 sm:p-7 bg-white overflow-y-auto flex-1 space-y-4">

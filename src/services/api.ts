@@ -86,16 +86,29 @@ export const api = {
     const query = search ? `?search=${encodeURIComponent(search)}` : '';
     return request<Student[]>(`/api/projects/${projectId}/students${query}`);
   },
-  async createStudent(projectId: string, name: string, subjectCodes: { subjectId: string; code: string }[], totalAttendance: number): Promise<Student> {
+  async createStudent(
+    projectId: string,
+    name: string,
+    subjectCodes: { subjectId: string; code: string }[],
+    totalAttendance: number,
+    meta?: { rollNo?: string; studentCode?: string }
+  ): Promise<Student> {
     return request<Student>(`/api/projects/${projectId}/students`, {
       method: 'POST',
-      body: JSON.stringify({ name, subjectCodes, totalAttendance })
+      body: JSON.stringify({ name, subjectCodes, totalAttendance, ...meta })
     });
   },
-  async updateStudent(projectId: string, id: string, name: string, subjectCodes: { subjectId: string; code: string }[], totalAttendance: number): Promise<Student> {
+  async updateStudent(
+    projectId: string,
+    id: string,
+    name: string,
+    subjectCodes: { subjectId: string; code: string }[],
+    totalAttendance: number,
+    meta?: { rollNo?: string; studentCode?: string }
+  ): Promise<Student> {
     return request<Student>(`/api/projects/${projectId}/students/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ name, subjectCodes, totalAttendance })
+      body: JSON.stringify({ name, subjectCodes, totalAttendance, ...meta })
     });
   },
   async deleteStudent(projectId: string, id: string): Promise<{ message: string }> {

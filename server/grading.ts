@@ -32,7 +32,8 @@ export function calculateSubjectGrade(obtainedMarks: number, totalMarks: number)
 export function calculateStudentResult(
   student: IStudent,
   subjects: ISubject[],
-  allMarks: IMarkEntry[]
+  allMarks: IMarkEntry[],
+  highestMarksMap?: Map<string, number>
 ): IStudentResult {
   let totalObtainedMarks = 0;
   let totalFullMarks = 0;
@@ -46,6 +47,7 @@ export function calculateStudentResult(
     totalFullMarks += subject.totalMarks;
     const markEntry = studentMarks.find(m => m.subjectId === subject._id);
     const codeObj = student.subjectCodes.find(sc => sc.subjectId === subject._id);
+    const highest = highestMarksMap?.has(subject._id) ? highestMarksMap.get(subject._id)! : null;
 
     if (!markEntry) {
       hasPending = true;
@@ -54,6 +56,7 @@ export function calculateStudentResult(
         subjectName: subject.name,
         totalMarks: subject.totalMarks,
         passMarks: subject.passMarks,
+        highestMarks: highest,
         obtainedMarks: null,
         percentage: null,
         grade: null,
@@ -81,6 +84,7 @@ export function calculateStudentResult(
       subjectName: subject.name,
       totalMarks: subject.totalMarks,
       passMarks: subject.passMarks,
+      highestMarks: highest,
       obtainedMarks: obtained,
       percentage,
       grade,
@@ -118,6 +122,8 @@ export function calculateStudentResult(
   return {
     studentId: student._id,
     studentName: student.name,
+    rollNo: student.rollNo || '',
+    studentCode: student.studentCode || '',
     totalAttendance: Number(student.totalAttendance ?? 0),
     totalObtainedMarks,
     totalFullMarks,
@@ -140,8 +146,16 @@ export function calculateAndRankProjectResults(
   subjects: ISubject[],
   allMarks: IMarkEntry[]
 ): IStudentResult[] {
+  const highestMarksMap = new Map<string, number>();
+  for (const m of allMarks) {
+    const current = highestMarksMap.get(m.subjectId);
+    if (current === undefined || m.obtainedMarks > current) {
+      highestMarksMap.set(m.subjectId, m.obtainedMarks);
+    }
+  }
+
   const initialResults: IStudentResult[] = students.map(student =>
-    calculateStudentResult(student, subjects, allMarks)
+    calculateStudentResult(student, subjects, allMarks, highestMarksMap)
   );
 
   const nonPending = initialResults.filter(r => r.finalStatus !== 'Pending');

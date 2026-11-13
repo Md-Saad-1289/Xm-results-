@@ -8,8 +8,19 @@ interface StudentsTabProps {
   subjects: Subject[];
   totalWorkingDays: number;
   loading: boolean;
-  onAddStudent: (name: string, subjectCodes: { subjectId: string; code: string }[], totalAttendance: number) => Promise<void>;
-  onUpdateStudent: (id: string, name: string, subjectCodes: { subjectId: string; code: string }[], totalAttendance: number) => Promise<void>;
+  onAddStudent: (
+    name: string,
+    subjectCodes: { subjectId: string; code: string }[],
+    totalAttendance: number,
+    meta?: { rollNo?: string; studentCode?: string }
+  ) => Promise<void>;
+  onUpdateStudent: (
+    id: string,
+    name: string,
+    subjectCodes: { subjectId: string; code: string }[],
+    totalAttendance: number,
+    meta?: { rollNo?: string; studentCode?: string }
+  ) => Promise<void>;
   onDeleteStudent: (id: string) => Promise<void>;
 }
 
@@ -27,6 +38,8 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
 
   const [name, setName] = useState('');
+  const [rollNo, setRollNo] = useState('');
+  const [studentCode, setStudentCode] = useState('');
   const [totalAttendance, setTotalAttendance] = useState<number | ''>('');
   const [codes, setCodes] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState('');
@@ -39,6 +52,8 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
   const openAddModal = () => {
     setEditingStudent(null);
     setName('');
+    setRollNo('');
+    setStudentCode('');
     setTotalAttendance('');
     const initialCodes: Record<string, string> = {};
     subjects.forEach(s => {
@@ -52,6 +67,8 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
   const openEditModal = (stu: Student) => {
     setEditingStudent(stu);
     setName(stu.name);
+    setRollNo(stu.rollNo || '');
+    setStudentCode(stu.studentCode || '');
     setTotalAttendance(stu.totalAttendance ?? 0);
     const stuCodes: Record<string, string> = {};
     subjects.forEach(s => {
@@ -112,10 +129,11 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
 
     try {
       setIsSubmitting(true);
+      const meta = { rollNo: rollNo.trim(), studentCode: studentCode.trim() };
       if (editingStudent) {
-        await onUpdateStudent(editingStudent._id, name.trim(), subjectCodesList, attendanceNum);
+        await onUpdateStudent(editingStudent._id, name.trim(), subjectCodesList, attendanceNum, meta);
       } else {
-        await onAddStudent(name.trim(), subjectCodesList, attendanceNum);
+        await onAddStudent(name.trim(), subjectCodesList, attendanceNum, meta);
       }
       setIsModalOpen(false);
     } catch (err: any) {
@@ -240,6 +258,13 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <h4 className="font-bold text-slate-900 text-base truncate">{stu.name}</h4>
+                    {(stu.rollNo || stu.studentCode) && (
+                      <span className="text-[11px] text-slate-500 font-mono-numbers block mt-0.5">
+                        {stu.rollNo ? `রোল: ${stu.rollNo}` : ''}
+                        {stu.rollNo && stu.studentCode ? ' · ' : ''}
+                        {stu.studentCode ? `আইডি: ${stu.studentCode}` : ''}
+                      </span>
+                    )}
                     <span className="text-xs text-slate-500 font-mono-numbers block mt-0.5">
                       মোট উপস্থিতি: <strong className="text-slate-800">{stu.totalAttendance ?? 0}</strong> / {totalWorkingDays} দিন
                     </span>
@@ -295,7 +320,14 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
                   {filteredStudents.map((stu) => (
                     <tr key={stu._id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="py-3.5 px-5 font-medium text-slate-900">
-                        {stu.name}
+                        <div>{stu.name}</div>
+                        {(stu.rollNo || stu.studentCode) && (
+                          <div className="text-[11px] text-slate-500 font-mono-numbers font-normal mt-0.5">
+                            {stu.rollNo ? `রোল: ${stu.rollNo}` : ''}
+                            {stu.rollNo && stu.studentCode ? ' · ' : ''}
+                            {stu.studentCode ? `আইডি: ${stu.studentCode}` : ''}
+                          </div>
+                        )}
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono-numbers text-slate-700 whitespace-nowrap">
                         <span className="font-semibold text-slate-900">{stu.totalAttendance ?? 0}</span>{' '}
@@ -376,6 +408,33 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
                   className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent min-h-[44px]"
                   autoFocus
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    রোল নং (ঐচ্ছিক)
+                  </label>
+                  <input
+                    type="text"
+                    value={rollNo}
+                    onChange={(e) => setRollNo(e.target.value)}
+                    placeholder="যেমন: ০৮"
+                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent font-mono-numbers min-h-[44px]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    শিক্ষার্থী আইডি (ঐচ্ছিক)
+                  </label>
+                  <input
+                    type="text"
+                    value={studentCode}
+                    onChange={(e) => setStudentCode(e.target.value)}
+                    placeholder="যেমন: GMS-2026-008"
+                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent font-mono-numbers min-h-[44px]"
+                  />
+                </div>
               </div>
 
               <div>

@@ -37,6 +37,8 @@ interface StudentDoc extends Document {
   _id: Types.ObjectId;
   projectId: Types.ObjectId;
   name: string;
+  rollNo: string;
+  studentCode: string;
   totalAttendance: number;
   subjectCodes: {
     subjectId: Types.ObjectId;
@@ -76,6 +78,8 @@ export const SubjectMongooseSchema = new Schema<SubjectDoc>({
 export const StudentMongooseSchema = new Schema<StudentDoc>({
   projectId: { type: Schema.Types.ObjectId, ref: 'Project', required: true, index: true },
   name: { type: String, required: true, trim: true },
+  rollNo: { type: String, default: '', trim: true },
+  studentCode: { type: String, default: '', trim: true },
   totalAttendance: { type: Number, required: true, default: 0, min: 0 },
   subjectCodes: [{
     subjectId: { type: Schema.Types.ObjectId, ref: 'Subject', required: true },
@@ -119,13 +123,15 @@ export interface IDatabaseAdapter {
     projectId: string,
     name: string,
     subjectCodes: { subjectId: string; code: string }[],
-    totalAttendance?: number
+    totalAttendance?: number,
+    meta?: { rollNo?: string; studentCode?: string }
   ): Promise<IStudent>;
   updateStudent(
     id: string,
     name: string,
     subjectCodes: { subjectId: string; code: string }[],
-    totalAttendance?: number
+    totalAttendance?: number,
+    meta?: { rollNo?: string; studentCode?: string }
   ): Promise<IStudent | null>;
   deleteStudent(id: string): Promise<boolean>;
 
@@ -189,6 +195,8 @@ function mapStudent(doc: StudentDoc): IStudent {
     _id: doc._id.toString(),
     projectId: doc.projectId.toString(),
     name: doc.name,
+    rollNo: doc.rollNo || '',
+    studentCode: doc.studentCode || '',
     totalAttendance: Number(doc.totalAttendance ?? 0),
     subjectCodes: (doc.subjectCodes || []).map(sc => ({
       subjectId: sc.subjectId.toString(),
@@ -398,7 +406,8 @@ class MongoDatabase implements IDatabaseAdapter {
     projectId: string,
     name: string,
     subjectCodes: { subjectId: string; code: string }[],
-    totalAttendance: number = 0
+    totalAttendance: number = 0,
+    meta?: { rollNo?: string; studentCode?: string }
   ): Promise<IStudent> {
     if (!this.isValidId(projectId)) throw new Error('অবৈধ প্রজেক্ট আইডি।');
     const project = await ProjectModel.findById(projectId);
@@ -425,6 +434,8 @@ class MongoDatabase implements IDatabaseAdapter {
     const doc = await StudentModel.create({
       projectId,
       name: name.trim(),
+      rollNo: (meta?.rollNo || '').trim(),
+      studentCode: (meta?.studentCode || '').trim(),
       totalAttendance: attendanceNum,
       subjectCodes: cleanCodes.map(sc => ({
         subjectId: new Types.ObjectId(sc.subjectId),
@@ -438,7 +449,8 @@ class MongoDatabase implements IDatabaseAdapter {
     id: string,
     name: string,
     subjectCodes: { subjectId: string; code: string }[],
-    totalAttendance: number = 0
+    totalAttendance: number = 0,
+    meta?: { rollNo?: string; studentCode?: string }
   ): Promise<IStudent | null> {
     if (!this.isValidId(id)) return null;
     const student = await StudentModel.findById(id);
@@ -477,6 +489,8 @@ class MongoDatabase implements IDatabaseAdapter {
     }
 
     student.name = name.trim();
+    if (meta?.rollNo !== undefined) student.rollNo = meta.rollNo.trim();
+    if (meta?.studentCode !== undefined) student.studentCode = meta.studentCode.trim();
     student.totalAttendance = attendanceNum;
     student.subjectCodes = cleanCodes.map(sc => ({
       subjectId: new Types.ObjectId(sc.subjectId),
@@ -842,13 +856,25 @@ class JsonDatabase implements IDatabaseAdapter {
   async getStudents(projectId: string): Promise<IStudent[]> {
     return this.data.students
       .filter(s => s.projectId === projectId)
-      .map(s => ({ ...s, totalAttendance: Number(s.totalAttendance ?? 0) }))
+      .map(s => ({
+        ...s,
+        rollNo: s.rollNo || '',
+        studentCode: s.studentCode || '',
+        totalAttendance: Number(s.totalAttendance ?? 0)
+      }))
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }
 
   async getStudentById(id: string): Promise<IStudent | null> {
     const student = this.data.students.find(s => s._id === id);
-    return student ? { ...student, totalAttendance: Number(student.totalAttendance ?? 0) } : null;
+    return student
+      ? {
+          ...student,
+          rollNo: student.rollNo || '',
+          studentCode: student.studentCode || '',
+          totalAttendance: Number(student.totalAttendance ?? 0)
+        }
+      : null;
   }
 
   async validateCodeUniqueness(
@@ -886,7 +912,8 @@ class JsonDatabase implements IDatabaseAdapter {
     projectId: string,
     name: string,
     subjectCodes: { subjectId: string; code: string }[],
-    totalAttendance: number = 0
+    totalAttendance: number = 0,
+    meta?: { rollNo?: string; studentCode?: string }
   ): Promise<IStudent> {
     const project = this.data.projects.find(p => p._id === projectId);
     if (!project) {
@@ -917,6 +944,8 @@ class JsonDatabase implements IDatabaseAdapter {
       _id: generateId(),
       projectId,
       name: trimmedName,
+      rollNo: (meta?.rollNo || '').trim(),
+      studentCode: (meta?.studentCode || '').trim(),
       totalAttendance: attendanceNum,
       subjectCodes: cleanCodes,
       createdAt: now,
@@ -932,7 +961,8 @@ class JsonDatabase implements IDatabaseAdapter {
     id: string,
     name: string,
     subjectCodes: { subjectId: string; code: string }[],
-    totalAttendance: number = 0
+    totalAttendance: number = 0,
+    meta?: { rollNo?: string; studentCode?: string }
   ): Promise<IStudent | null> {
     const index = this.data.students.findIndex(s => s._id === id);
     if (index === -1) return null;
@@ -962,6 +992,8 @@ class JsonDatabase implements IDatabaseAdapter {
     }
 
     student.name = name.trim();
+    if (meta?.rollNo !== undefined) student.rollNo = meta.rollNo.trim();
+    if (meta?.studentCode !== undefined) student.studentCode = meta.studentCode.trim();
     student.totalAttendance = attendanceNum;
     for (const newSc of cleanCodes) {
       const oldSc = student.subjectCodes.find(o => o.subjectId === newSc.subjectId);
