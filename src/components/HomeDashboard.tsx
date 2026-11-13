@@ -112,7 +112,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               className="inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 min-h-[40px] text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 active:bg-slate-950 rounded-xl sm:rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
             >
               <Plus className="w-4 h-4" />
-              <span>+ নতুন প্রজেক্ট</span>
+              <span> নতুন প্রজেক্ট</span>
             </button>
           </div>
         </div>
@@ -144,7 +144,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 active:bg-slate-950 rounded-xl transition-colors cursor-pointer shadow-xs"
             >
               <Plus className="w-4 h-4" />
-              <span>+ নতুন প্রজেক্ট</span>
+              <span> নতুন প্রজেক্ট</span>
             </button>
           </div>
         ) : (
