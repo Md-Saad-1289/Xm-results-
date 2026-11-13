@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Hind Siliguri', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.font-mono-numbers {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* Global Print and PDF Export Rules - Guarantees table containment and zero overflow */
+@media print {
+  @page {
+    margin: 8mm 10mm;
+    size: auto;
+  }
+
+  /* Hide app chrome, headers, sidebars, and elements marked print:hidden */
+  header, nav, aside, .print\\:hidden, button {
+    display: none !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 10pt !important;
+    overflow: visible !important;
+    width: 100% !important;
+  }
+
+  /* Reset modal overlay containers so modal contents expand directly on paper */
+  .fixed, [class*="fixed"] {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  [class*="max-w-"], [class*="min-w-"], .overflow-x-auto, .overflow-y-auto {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Table styling in print: 100% width, no overflow, clean cell breaks */
+  table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: auto !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  th, td {
+    padding: 4px 6px !important;
+    font-size: 8.5pt !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    border-color: #cbd5e1 !important;
+    white-space: normal !important;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  /* Ensure summary cards don't break awkwardly across pages */
+  .grid {
+    page-break-inside: avoid;
+  }
+}
