@@ -591,22 +591,127 @@ export const CompleteResultModal: React.FC<CompleteResultModalProps> = ({
 
   const renderStatus = (status: FinalStatus) => {
     if (status === 'Pass') return <span className="font-bold text-slate-900">পাস</span>;
-    if (status === 'Fail') return <text-amber-600 shadow-xs font-semibold' : 'text-slate-600 hover:text-amber-600'
-                }`}
-              >
-                অপেক্ষমাণ ({pendingCount})
-              </button>
+    if (status === 'Fail') return <span className="font-bold text-rose-600">ফেল</span>;
+    return <span className="font-bold text-amber-600">অপেক্ষমাণ</span>;
+  };
+
+  const filterTabs: { key: FilterOption; label: string; count: number; active: string; hover: string }[] = [
+    { key: 'all', label: 'সকল', count: results.length, active: 'text-slate-900', hover: 'hover:text-slate-900' },
+    { key: 'pass', label: 'পাস', count: passedCount, active: 'text-emerald-700', hover: 'hover:text-emerald-700' },
+    { key: 'fail', label: 'ফেল', count: failedCount, active: 'text-rose-600', hover: 'hover:text-rose-600' },
+    { key: 'pending', label: 'অপেক্ষমাণ', count: pendingCount, active: 'text-amber-600', hover: 'hover:text-amber-600' }
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-xs overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-label="সম্পূর্ণ ফলাফল তালিকা"
+      onMouseDown={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full sm:max-w-6xl bg-white rounded-t-2xl sm:rounded-xl shadow-2xl border border-slate-200 overflow-hidden my-0 sm:my-6 animate-in slide-in-from-bottom sm:slide-in-from-none sm:fade-in sm:zoom-in-95 duration-150 max-h-[95vh] flex flex-col">
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-3.5 border-b border-slate-200 bg-slate-50 gap-3 shrink-0">
+          <div>
+            <h3 className="text-base font-bold text-slate-900">সম্পূর্ণ ফলাফল তালিকা (Master Sheet)</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              প্রজেক্ট: <span className="font-semibold text-slate-800">{project.name}</span> · মোট শিক্ষার্থী:{' '}
+              <span className="font-mono-numbers font-semibold text-slate-800">{results.length}</span> জন
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <button
+              onClick={handlePrint}
+              type="button"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 active:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              title="সম্পূর্ণ ফলাফল তালিকা প্রিন্ট বা PDF সেভ করুন"
+            >
+              <Printer className="w-4 h-4" />
+              <span>প্রিন্ট / PDF</span>
+            </button>
+            <button
+              onClick={handleDownload}
+              type="button"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] text-xs font-semibold text-white bg-[#1B365D] hover:bg-slate-800 active:bg-slate-950 rounded-lg transition-colors cursor-pointer shadow-xs"
+              title="অফলাইন ফাইল হিসেবে ডাউনলোড করুন"
+            >
+              <Download className="w-4 h-4" />
+              <span>ডাউনলোড</span>
+            </button>
+            <button
+              onClick={onClose}
+              type="button"
+              aria-label="বন্ধ করুন"
+              className="p-1.5 min-h-[36px] min-w-[36px] flex items-center justify-center text-slate-500 hover:text-slate-800 active:bg-slate-200 rounded-lg transition-colors cursor-pointer ml-1"
+              title="বন্ধ করুন"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 sm:p-7 bg-white overflow-y-auto flex-1 space-y-4">
+          <div className="text-center space-y-1 pt-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1B365D] tracking-wide uppercase">
+              {instituteTitle}
+            </h1>
+            <p className="text-xs sm:text-sm font-semibold text-slate-500 tracking-wider uppercase">
+              সম্পূর্ণ ফলাফল তালিকা (COMPLETE CLASS RESULT SHEET)
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between gap-2 sm:gap-4 px-1 py-2 text-xs sm:text-sm text-slate-900 border-b border-slate-200">
+            <div>
+              <span className="font-bold">পরীক্ষা:</span> <span>{examTitle}</span>
+            </div>
+            <div>
+              <span className="font-bold">শ্রেণি:</span> <span>{classTitle}</span>
+            </div>
+            <div>
+              <span className="font-bold">শাখা:</span> <span>{sectionTitle}</span>
+            </div>
+            <div>
+              <span className="font-bold">মোট কার্যদিবস:</span>{' '}
+              <span className="font-mono-numbers">{totalWorkingDays}</span> দিন
+            </div>
+          </div>
+
+          {/* Filter + sort */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg text-xs font-medium overflow-x-auto no-scrollbar">
+              {filterTabs.map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setFilter(tab.key)}
+                  type="button"
+                  className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap cursor-pointer ${
+                    filter === tab.key
+                      ? `bg-white ${tab.active} shadow-xs font-semibold`
+                      : `text-slate-600 ${tab.hover}`
+                  }`}
+                >
+                  {tab.label} ({tab.count})
+                </button>
+              ))}
             </div>
 
-            {/* Sorting Select */}
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-slate-500 whitespace-nowrap flex items-center gap-1">
+              <label
+                htmlFor="result-sort"
+                className="text-xs text-slate-500 whitespace-nowrap flex items-center gap-1"
+              >
                 <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
                 সাজান:
-              </span>
+              </label>
               <select
+                id="result-sort"
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                onChange={e => setSortBy(e.target.value as SortOption)}
                 className="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
               >
                 <option value="merit">মেধা স্থান (ডিফল্ট)</option>
@@ -620,31 +725,34 @@ export const CompleteResultModal: React.FC<CompleteResultModalProps> = ({
             </div>
           </div>
 
-          {/* Master Result Table (Navy Header + Crisp Borders + Fail Pink Tint, Print-safe) */}
-          <div className="border border-slate-300 overflow-x-auto print:overflow-visible print:w-full">
-            <table className="w-full text-left text-xs sm:text-sm min-w-[760px] border-collapse print:min-w-0 print:w-full print:text-[8.5pt] print:table-auto">
+          {/* Table */}
+          <div className="border border-slate-300 overflow-x-auto">
+            <table className="w-full text-left text-xs sm:text-sm min-w-[760px] border-collapse">
               <thead>
-                <tr className="bg-[#1B365D] text-white font-bold text-xs print:text-[8.5pt]">
-                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] w-10 print:py-1.5 print:px-1">নং</th>
-                  <th className="py-2.5 px-3 text-left border border-[#1B365D] min-w-[140px] print:py-1.5 print:px-2">শিক্ষার্থীর নাম</th>
+                <tr className="bg-[#1B365D] text-white font-bold text-xs">
+                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] w-10">নং</th>
+                  <th className="py-2.5 px-3 text-left border border-[#1B365D] min-w-[140px]">শিক্ষার্থীর নাম</th>
                   {subjects.map(s => (
-                    <th key={s._id} className="py-2.5 px-2 text-center border border-[#1B365D] whitespace-nowrap print:whitespace-normal print:py-1.5 print:px-1">
+                    <th key={s._id} className="py-2.5 px-2 text-center border border-[#1B365D] whitespace-nowrap">
                       {s.name}
                     </th>
                   ))}
-                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] whitespace-nowrap print:py-1.5 print:px-1">মোট নম্বর</th>
-                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] whitespace-nowrap print:py-1.5 print:px-1">উপস্থিতি</th>
-                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] whitespace-nowrap print:py-1.5 print:px-1">জিপিএ</th>
-                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] whitespace-nowrap print:py-1.5 print:px-1">গ্রেড</th>
-                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] whitespace-nowrap print:py-1.5 print:px-1">মেধা স্থান</th>
-                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] whitespace-nowrap print:py-1.5 print:px-1">ফলাফল</th>
+                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] whitespace-nowrap">মোট নম্বর</th>
+                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] whitespace-nowrap">উপস্থিতি</th>
+                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] whitespace-nowrap">জিপিএ</th>
+                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] whitespace-nowrap">গ্রেড</th>
+                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] whitespace-nowrap">মেধা স্থান</th>
+                  <th className="py-2.5 px-2.5 text-center border border-[#1B365D] whitespace-nowrap">ফলাফল</th>
                 </tr>
               </thead>
               <tbody>
                 {processedResults.length === 0 ? (
                   <tr>
-                    <td colSpan={subjects.length + 8} className="py-8 text-center text-slate-500 text-sm border border-slate-300">
-                      কোনো ফলাফল পাওয়া যায়নি
+                    <td
+                      colSpan={subjects.length + 8}
+                      className="py-8 text-center text-slate-500 text-sm border border-slate-300"
+                    >
+                      কোনো ফলাফল পাওয়া যায়নি
                     </td>
                   </tr>
                 ) : (
@@ -660,18 +768,21 @@ export const CompleteResultModal: React.FC<CompleteResultModalProps> = ({
                         : 'bg-white';
 
                     return (
-                      <tr key={r.studentId} className={`${rowBg} print:break-inside-avoid`}>
-                        <td className="py-2 px-2.5 text-center font-mono-numbers text-slate-700 border border-slate-300 print:py-1 print:px-1">
+                      <tr key={r.studentId} className={rowBg}>
+                        <td className="py-2 px-2.5 text-center font-mono-numbers text-slate-700 border border-slate-300">
                           {idx + 1}
                         </td>
-                        <td className="py-2 px-3 font-medium text-slate-900 border border-slate-300 whitespace-nowrap print:whitespace-normal print:py-1 print:px-2">
+                        <td className="py-2 px-3 font-medium text-slate-900 border border-slate-300 whitespace-nowrap">
                           {r.studentName}
                         </td>
                         {subjects.map(s => {
                           const subRes = r.subjectResults.find(sr => sr.subjectId === s._id);
-                          if (!subRes || subRes.obtainedMarks === null) {
+                          if (!subRes || subRes.obtainedMarks === null || subRes.obtainedMarks === undefined) {
                             return (
-                              <td key={s._id} className="py-2 px-2 text-center font-mono-numbers text-amber-600 border border-slate-300 print:py-1 print:px-1">
+                              <td
+                                key={s._id}
+                                className="py-2 px-2 text-center font-mono-numbers text-amber-600 border border-slate-300"
+                              >
                                 —
                               </td>
                             );
@@ -680,7 +791,7 @@ export const CompleteResultModal: React.FC<CompleteResultModalProps> = ({
                           return (
                             <td
                               key={s._id}
-                              className={`py-2 px-2 text-center font-mono-numbers border border-slate-300 print:py-1 print:px-1 ${
+                              className={`py-2 px-2 text-center font-mono-numbers border border-slate-300 ${
                                 isFail ? 'text-rose-600 font-bold' : 'text-slate-800'
                               }`}
                             >
@@ -688,26 +799,26 @@ export const CompleteResultModal: React.FC<CompleteResultModalProps> = ({
                             </td>
                           );
                         })}
-                        <td className="py-2 px-2.5 text-center font-mono-numbers font-semibold text-slate-900 border border-slate-300 print:py-1 print:px-1">
+                        <td className="py-2 px-2.5 text-center font-mono-numbers font-semibold text-slate-900 border border-slate-300">
                           {r.totalObtainedMarks}
                         </td>
-                        <td className="py-2 px-2.5 text-center font-mono-numbers text-slate-800 border border-slate-300 whitespace-nowrap print:py-1 print:px-1">
+                        <td className="py-2 px-2.5 text-center font-mono-numbers text-slate-800 border border-slate-300 whitespace-nowrap">
                           {r.totalAttendance ?? 0}/{totalWorkingDays}
                         </td>
-                        <td className="py-2 px-2.5 text-center font-mono-numbers font-semibold text-slate-900 border border-slate-300 print:py-1 print:px-1">
-                          {r.gpa !== null ? r.gpa.toFixed(2) : '—'}
+                        <td className="py-2 px-2.5 text-center font-mono-numbers font-semibold text-slate-900 border border-slate-300">
+                          {r.gpa !== null && r.gpa !== undefined ? r.gpa.toFixed(2) : '—'}
                         </td>
                         <td
-                          className={`py-2 px-2.5 text-center font-semibold border border-slate-300 print:py-1 print:px-1 ${
+                          className={`py-2 px-2.5 text-center font-semibold border border-slate-300 ${
                             gradeText === 'F' ? 'text-rose-600' : 'text-slate-900'
                           }`}
                         >
                           {gradeText}
                         </td>
-                        <td className="py-2 px-2.5 text-center font-mono-numbers font-semibold text-slate-900 border border-slate-300 print:py-1 print:px-1">
-                          {r.meritPosition !== null ? r.meritPosition : '—'}
+                        <td className="py-2 px-2.5 text-center font-mono-numbers font-semibold text-slate-900 border border-slate-300">
+                          {r.meritPosition !== null && r.meritPosition !== undefined ? r.meritPosition : '—'}
                         </td>
-                        <td className="py-2 px-2.5 text-center border border-slate-300 whitespace-nowrap print:py-1 print:px-1">
+                        <td className="py-2 px-2.5 text-center border border-slate-300 whitespace-nowrap">
                           {renderStatus(r.finalStatus)}
                         </td>
                       </tr>
@@ -718,52 +829,48 @@ export const CompleteResultModal: React.FC<CompleteResultModalProps> = ({
             </table>
           </div>
 
-          {/* Institutional Bottom Summary Strip (Matches Reference PDF Page 2) */}
-          <div className={`grid grid-cols-2 ${pendingCount > 0 ? 'sm:grid-cols-6 print:grid-cols-6' : 'sm:grid-cols-5 print:grid-cols-5'} border border-slate-300 bg-[#EEF4FB] text-xs font-bold text-[#1B365D] print:text-[9pt] print:break-inside-avoid`}>
-            <div className="py-2.5 px-3 text-center border-b sm:border-b-0 border-r border-slate-300 print:py-1.5 print:border-b-0">
+          {/* Summary strip */}
+          <div
+            className={`grid grid-cols-2 ${
+              pendingCount > 0 ? 'sm:grid-cols-6' : 'sm:grid-cols-5'
+            } border border-slate-300 bg-[#EEF4FB] text-xs font-bold text-[#1B365D]`}
+          >
+            <div className="py-2.5 px-3 text-center border-b sm:border-b-0 border-r border-slate-300">
               মোট শিক্ষার্থী: <span className="font-mono-numbers">{results.length}</span>
             </div>
-            <div className="py-2.5 px-3 text-center border-b sm:border-b-0 sm:border-r border-slate-300 print:py-1.5 print:border-b-0 print:border-r">
+            <div className="py-2.5 px-3 text-center border-b sm:border-b-0 sm:border-r border-slate-300">
               পাস: <span className="font-mono-numbers">{passedCount}</span>
             </div>
-            <div className="py-2.5 px-3 text-center border-b sm:border-b-0 border-r border-slate-300 print:py-1.5 print:border-b-0">
+            <div className="py-2.5 px-3 text-center border-b sm:border-b-0 border-r border-slate-300">
               ফেল: <span className="font-mono-numbers">{failedCount}</span>
             </div>
             {pendingCount > 0 && (
-              <div className="py-2.5 px-3 text-center border-b sm:border-b-0 sm:border-r border-slate-300 print:py-1.5 print:border-b-0 print:border-r">
+              <div className="py-2.5 px-3 text-center border-b sm:border-b-0 sm:border-r border-slate-300">
                 অপেক্ষমাণ: <span className="font-mono-numbers">{pendingCount}</span>
               </div>
             )}
-            <div className="py-2.5 px-3 text-center sm:border-r border-slate-300 print:py-1.5 print:border-r">
+            <div className="py-2.5 px-3 text-center sm:border-r border-slate-300">
               পাসের হার: <span className="font-mono-numbers">{passRate}%</span>
             </div>
-            <div className="col-span-2 sm:col-span-1 py-2.5 px-3 text-center border-t sm:border-t-0 border-slate-300 print:py-1.5 print:col-span-1 print:border-t-0">
-              গড় উপস্থিতি: <span className="font-mono-numbers">{avgAttendance}%</span>
+            <div className="col-span-2 sm:col-span-1 py-2.5 px-3 text-center border-t sm:border-t-0 border-slate-300">
+              গড় উপস্থিতি: <span className="font-mono-numbers">{avgAttendance}%</span>
             </div>
           </div>
 
-          {/* 3-Column Signature Block (Matches Reference PDF Page 2) */}
-          <div className="grid grid-cols-3 gap-4 sm:gap-10 pt-10 pb-2 text-center print:pt-10 print:break-inside-avoid">
-            <div>
-              <div className="border-t border-slate-700 w-28 sm:w-44 mx-auto pt-1.5 text-[11px] sm:text-xs font-bold text-slate-900">
-                প্রস্তুতকারক
+          {/* Signatures */}
+          <div className="grid grid-cols-3 gap-4 sm:gap-10 pt-10 pb-2 text-center">
+            {['প্রস্তুতকারক', 'শ্রেণি শিক্ষক', 'প্রধান শিক্ষক'].map(label => (
+              <div key={label}>
+                <div className="border-t border-slate-700 w-28 sm:w-44 mx-auto pt-1.5 text-[11px] sm:text-xs font-bold text-slate-900">
+                  {label}
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="border-t border-slate-700 w-28 sm:w-44 mx-auto pt-1.5 text-[11px] sm:text-xs font-bold text-slate-900">
-                শ্রেণি শিক্ষক
-              </div>
-            </div>
-            <div>
-              <div className="border-t border-slate-700 w-28 sm:w-44 mx-auto pt-1.5 text-[11px] sm:text-xs font-bold text-slate-900">
-                প্রধান শিক্ষক
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Modal Footer */}
-        <div className="px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0 print:hidden">
+        {/* Footer */}
+        <div className="px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
           <button
             type="button"
             onClick={onClose}
